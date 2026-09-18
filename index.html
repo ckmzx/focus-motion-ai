@@ -185,7 +185,12 @@
     transition: none;
   }
 }
-    .presc-carousel { position: relative; overflow: hidden; margin-top: 0; }
+    .presc-carousel {
+  position: relative;
+  overflow: hidden;
+  margin-top: 0;
+  touch-action: pan-y;
+}
 .presc-track { display: flex; transition: transform .55s cubic-bezier(.22,1,.36,1); }
 .presc-slide { flex: 0 0 100%; }
 .presc-banner { min-height: 206px; display: flex; flex-direction: column; justify-content: center; }
@@ -450,19 +455,130 @@
   <script>
 (() => {
   const carousel = document.getElementById('prescCarousel');
+
   if (!carousel) return;
+
   const track = carousel.querySelector('.presc-track');
   const slides = [...carousel.querySelectorAll('.presc-slide')];
   const dots = carousel.querySelector('.presc-dots');
-  let index = 0, timer, startX = 0;
-  slides.forEach((_, i) => { const button = document.createElement('button'); button.className = 'presc-dot'; button.setAttribute('aria-label', `${i + 1}번 처방 보기`); button.onclick = () => go(i); dots.appendChild(button); });
-  const go = (next) => { index = (next + slides.length) % slides.length; track.style.transform = `translateX(-${index * 100}%)`; [...dots.children].forEach((dot, i) => dot.classList.toggle('is-active', i === index)); };
-  const play = () => { clearInterval(timer); timer = setInterval(() => go(index + 1), 4500); };
-  carousel.addEventListener('pointerdown', event => { startX = event.clientX; clearInterval(timer); });
-  carousel.addEventListener('pointerup', event => { if (Math.abs(event.clientX - startX) > 35) go(index + (event.clientX < startX ? 1 : -1)); play(); });
-  carousel.addEventListener('mouseenter', () => clearInterval(timer));
+
+  let index = 0;
+  let timer;
+  let startX = 0;
+  let startY = 0;
+  let isDragging = false;
+
+  slides.forEach((_, i) => {
+    const button = document.createElement('button');
+
+    button.className = 'presc-dot';
+    button.type = 'button';
+    button.setAttribute('aria-label', `${i + 1}번 처방 보기`);
+
+    button.addEventListener('click', () => {
+      go(i);
+      play();
+    });
+
+    dots.appendChild(button);
+  });
+
+  function go(nextIndex) {
+    index = (nextIndex + slides.length) % slides.length;
+
+    track.style.transform = `translateX(-${index * 100}%)`;
+
+    [...dots.children].forEach((dot, dotIndex) => {
+      dot.classList.toggle('is-active', dotIndex === index);
+    });
+  }
+
+  function play() {
+    clearInterval(timer);
+
+    timer = setInterval(() => {
+      go(index + 1);
+    }, 4500);
+  }
+
+  function stop() {
+    clearInterval(timer);
+  }
+
+  function beginSwipe(clientX, clientY) {
+    startX = clientX;
+    startY = clientY;
+    isDragging = true;
+    stop();
+  }
+
+  function endSwipe(clientX, clientY) {
+    if (!isDragging) return;
+
+    const moveX = clientX - startX;
+    const moveY = clientY - startY;
+    const swipeThreshold = 35;
+
+    /* 세로 스크롤보다 가로 이동이 큰 경우에만 슬라이드 */
+    if (Math.abs(moveX) > swipeThreshold && Math.abs(moveX) > Math.abs(moveY)) {
+      if (moveX < 0) {
+        go(index + 1);
+      } else {
+        go(index - 1);
+      }
+    }
+
+    isDragging = false;
+    play();
+  }
+
+  /* 모바일 터치 스와이프 */
+  carousel.addEventListener(
+    'touchstart',
+    (event) => {
+      const touch = event.touches[0];
+      beginSwipe(touch.clientX, touch.clientY);
+    },
+    { passive: true }
+  );
+
+  carousel.addEventListener(
+    'touchend',
+    (event) => {
+      const touch = event.changedTouches[0];
+      endSwipe(touch.clientX, touch.clientY);
+    },
+    { passive: true }
+  );
+
+  carousel.addEventListener(
+    'touchcancel',
+    () => {
+      isDragging = false;
+      play();
+    },
+    { passive: true }
+  );
+
+  /* PC 마우스 드래그 */
+  carousel.addEventListener('pointerdown', (event) => {
+    beginSwipe(event.clientX, event.clientY);
+  });
+
+  carousel.addEventListener('pointerup', (event) => {
+    endSwipe(event.clientX, event.clientY);
+  });
+
+  carousel.addEventListener('pointercancel', () => {
+    isDragging = false;
+    play();
+  });
+
+  carousel.addEventListener('mouseenter', stop);
   carousel.addEventListener('mouseleave', play);
-  go(0); play();
+
+  go(0);
+  play();
 })();
 </script>
 </body>
