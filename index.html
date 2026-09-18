@@ -185,6 +185,14 @@
     transition: none;
   }
 }
+    .presc-carousel { position: relative; overflow: hidden; margin-top: 0; }
+.presc-track { display: flex; transition: transform .55s cubic-bezier(.22,1,.36,1); }
+.presc-slide { flex: 0 0 100%; }
+.presc-banner { min-height: 206px; display: flex; flex-direction: column; justify-content: center; }
+.presc-count { position: absolute; top: 14px; right: 16px; color: #a7f3d0; font-size: 10px; font-weight: 800; }
+.presc-dots { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
+.presc-dot { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 99px; background: #cbd5e1; cursor: pointer; transition: .25s ease; }
+.presc-dot.is-active { width: 20px; background: #10b981; }
   </style>
 </head>
 <body>
@@ -269,11 +277,23 @@
       </div>
 
       <!-- 처방 박스 -->
-      <div class="presc-banner" style="margin-top:0;">
-        <div class="presc-tag">AI COACHING PRESCRIPTION</div>
-        <div class="presc-h">💡 PASS AI 코칭 맞춤 처방 훈련 : [도약 전환 템포 단축]</div>
-        <div class="presc-p">도약 전환시간(0.29s)을 0.25s 이하로 단축시켜 반동 탄성을 극대화하는 <b>탄력 리바운드 점프</b> 훈련을 권장합니다.</div>
-      </div>
+      <div class="presc-carousel" id="prescCarousel" aria-label="PASS AI 코칭 맞춤 처방">
+  <div class="presc-track">
+    <article class="presc-slide">
+      <div class="presc-banner"><div class="presc-count">01 / 04</div><div class="presc-tag">AI PRIORITY 01</div><div class="presc-h">💡 PASS AI 코칭 맞춤 처방 훈련 : [도약 전환 템포 단축]</div><div class="presc-p">도약 전환시간(0.29s)이 다소 길어 반동 탄성(SSC) 손실이 발생합니다. 최저점에서 멈춤 없이 지면을 즉시 튕겨내는 <b>탄력 리바운드 점프</b> 훈련을 권장합니다.</div></div>
+    </article>
+    <article class="presc-slide">
+      <div class="presc-banner"><div class="presc-count">02 / 04</div><div class="presc-tag">AI PRIORITY 02</div><div class="presc-h">💡 PASS AI 코칭 맞춤 처방 훈련 : [팔 전방 가속 폭발력 강화]</div><div class="presc-p">팔 전방 최고 스윙속도가 완만하여 상체 추진 가속이 부족합니다. 덤벨이나 저항 밴드를 활용한 <b>빠르고 강한 팔스윙 후 제자리 점프 훈련</b>을 추천합니다.</div></div>
+    </article>
+    <article class="presc-slide">
+      <div class="presc-banner"><div class="presc-count">03 / 04</div><div class="presc-tag">AI PRIORITY 03</div><div class="presc-h">💡 PASS AI 코칭 맞춤 처방 훈련 : [무릎/발목 신전 폭발력(트리플 익스텐션)]</div><div class="presc-p">점프 직전 무릎 펴짐 속도가 부족합니다. 지면을 발끝까지 강하게 밀어내는 <b>박스 점프 및 발목 플라이오메트릭 점프 훈련</b>을 추천합니다.</div></div>
+    </article>
+    <article class="presc-slide">
+      <div class="presc-banner"><div class="presc-count">04 / 04</div><div class="presc-tag">AI PRIORITY 04</div><div class="presc-h">💡 PASS AI 코칭 맞춤 처방 훈련 : [전방 수평 추진력 집중]</div><div class="presc-p">점프 방향각이 높아 위로 뜨는 비율이 큽니다. 상체 전방 기울기를 유지하며 앞을 향해 몸을 쏘아보내는 <b>낮은 궤적 전방 바운딩 훈련</b>을 권장합니다.</div></div>
+    </article>
+  </div>
+  <div class="presc-dots" aria-label="처방 카드 선택"></div>
+</div>
     </div>
 
     <!-- 2. 핵심 기술 특장점 -->
@@ -428,5 +448,23 @@
       });
     });
   </script>
+  <script>
+(() => {
+  const carousel = document.getElementById('prescCarousel');
+  if (!carousel) return;
+  const track = carousel.querySelector('.presc-track');
+  const slides = [...carousel.querySelectorAll('.presc-slide')];
+  const dots = carousel.querySelector('.presc-dots');
+  let index = 0, timer, startX = 0;
+  slides.forEach((_, i) => { const button = document.createElement('button'); button.className = 'presc-dot'; button.setAttribute('aria-label', `${i + 1}번 처방 보기`); button.onclick = () => go(i); dots.appendChild(button); });
+  const go = (next) => { index = (next + slides.length) % slides.length; track.style.transform = `translateX(-${index * 100}%)`; [...dots.children].forEach((dot, i) => dot.classList.toggle('is-active', i === index)); };
+  const play = () => { clearInterval(timer); timer = setInterval(() => go(index + 1), 4500); };
+  carousel.addEventListener('pointerdown', event => { startX = event.clientX; clearInterval(timer); });
+  carousel.addEventListener('pointerup', event => { if (Math.abs(event.clientX - startX) > 35) go(index + (event.clientX < startX ? 1 : -1)); play(); });
+  carousel.addEventListener('mouseenter', () => clearInterval(timer));
+  carousel.addEventListener('mouseleave', play);
+  go(0); play();
+})();
+</script>
 </body>
 </html>
